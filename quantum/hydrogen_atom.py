@@ -19,32 +19,41 @@ from scipy.special import eval_hermite
 from scipy.special import hermite
 import sys 
 
-def hydrogen_plot(n, l, m):
+def hydrogen_wave_func(n, l, m, roa, Nx, Ny, Nz):
     """
-    plot the wave function of hydrogen atom with quantum numbers n, l, m.
+    calculate the wave function of hydrogen atom with quantum numbers n, l, m.
     """
     # set up the grid
-    r = np.linspace(0, 20, 100)
-    theta = np.linspace(0, np.pi, 100)
-    phi = np.linspace(0, 2*np.pi, 100)    
+    x = np.linspace(-roa, roa, Nx)
+    y = np.linspace(-roa, roa, Ny)
+    z = np.linspace(-roa, roa, Nz)
+    R = np.sqrt(x**2 + y**2 + z**2)
+    Theta = np.arccos(z / R)
+    Phi = np.arctan2(y, x)    
     # calculate the wave function
-    R_nl = 2 * r * np.exp(-r / n) * (r / n)**l * eval_genlaguerre(n - l - 1, 2 * l + 1, r / n)
-    Y_lm = sph_harm(m, l, phi, theta)
+    R_nl = 2 * R * np.exp(-R / n) * (R / n)**l * eval_genlaguerre(n - l - 1, 2 * l + 1, R / n)
+    Y_lm = sph_harm(m, l, Phi, Theta)
     Psi = R_nl * Y_lm
-    # transform psi to cartesian coordinates
-    X = 
-    Y = R * np.sin(Theta) * np.sin(Phi)
-    Z = R * np.cos(Theta)    
-    # plot the wave function in spherical coordinates
+    return Psi, x, y, z
+
+def probability_density(Psi):
+    """
+    calculate the probability density of the wave function.
+    """
+    return np.abs(Psi * np.conj(Psi))
+
+def plot_probability_density(Psi, X, Y, Z):
+    """
+    plot the probability density of the wave function.
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(R * np.sin(Theta) * np.cos(Phi), R * np.sin(Theta) * np.sin(Phi), R * np.cos(Theta), rstride=1, cstride=1, facecolors=cm.jet(Psi.real), norm=colors.Normalize(vmin=-0.5, vmax=0.5))
+    ax.set_aspect("equal")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    ax.set_title("Hydrogen atom wave function")
-    plt.show()    
-
+    ax.scatter(X, Y, Z, c=probability_density(Psi), cmap='viridis', linewidth=0.5)
+    plt.show()
 
 def main():
     """
@@ -58,14 +67,15 @@ def main():
         print("Invalid quantum numbers")
         sys.exit(1)
     """
-    n = 3
-    l = 2
+    n = 1
+    l = 0
     m = 0
     print("n = ", n)
     print("l = ", l)
     print("m = ", m)
     print("Plotting...")
-    hydrogen_plot(n, l, m)
+    Psi, X, Y, Z = hydrogen_wave_func(n, l, m, 10, 100, 100, 100)
+    plot_probability_density(Psi, X, Y, Z)
     print("Done!")
     
 if __name__ == "__main__":
